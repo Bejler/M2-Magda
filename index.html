@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Martes de Pololeo - Boarding Pass</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- ESTILOS CSS INTEGRADOS --- */
+        :root {
+            --primary: #007AFF;
+            --dark: #000000;
+            --light: #FFFFFF;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: #F2F2F7;
+            color: var(--dark);
+            overflow: hidden; /* Evita scroll en la pantalla de bloqueo */
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- PANTALLA DE BLOQUEO (PORTADA) --- */
+        #lock-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            z-index: 2000; background: #000; color: white;
+            display: flex; align-items: flex-end; justify-content: center;
+        }
+
+        .slideshow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+
+        /* Corrección de Nitidez: Usamos IMG en lugar de background */
+        .slide-img {
+            position: absolute; width: 100%; height: 100%;
+            object-fit: cover;
+            object-position: center;
+            opacity: 0;
+            will-change: opacity, transform;
+            animation: fadeLoop 20s infinite;
+        }
+
+        .slide-img:nth-child(1) { animation-delay: 0s; }
+        .slide-img:nth-child(2) { animation-delay: 4s; }
+        .slide-img:nth-child(3) { animation-delay: 8s; }
+        .slide-img:nth-child(4) { animation-delay: 12s; }
+        .slide-img:nth-child(5) { animation-delay: 16s; }
+
+        @keyframes fadeLoop {
+            0% { opacity: 0; transform: scale(1); }
+            10% { opacity: 1; }
+            30% { opacity: 1; }
+            50% { opacity: 0; transform: scale(1.05); } /* Zoom suave */
+            100% { opacity: 0; }
+        }
+
+        .lock-content {
+            width: 100%; padding: 40px 20px; text-align: center;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .date { font-size: 0.8rem; letter-spacing: 2px; opacity: 0.9; font-weight: 600; text-transform: uppercase; margin-bottom: 5px; }
+        h1 { font-size: 2.2rem; margin: 5px 0 10px 0; font-weight: 800; }
+        .subtitle { font-size: 1rem; opacity: 0.9; margin-bottom: 25px; }
+
+        .unlock-btn {
+            background: white; color: black; border: none;
+            padding: 15px 30px; border-radius: 50px;
+            font-size: 1rem; font-weight: bold; cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transition: transform 0.2s; display: flex; align-items: center; gap: 10px; margin: 0 auto;
+        }
+        .unlock-btn:active { transform: scale(0.95); }
+
+        /* --- APP INTERFACE (WALLET) --- */
+        #app-interface {
+            max-width: 500px; margin: 0 auto; min-height: 100vh;
+            padding: 20px; padding-bottom: 50px;
+            display: flex; flex-direction: column;
+            opacity: 0; transition: opacity 0.8s;
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 20px; margin-bottom: 30px;
+        }
+        header h2 { font-size: 1.5rem; font-weight: 800; }
+        header p { color: #888; font-size: 0.9rem; }
+
+        .avatar-container { position: relative; }
+        .avatar-container img {
+            width: 50px; height: 50px; border-radius: 50%; object-fit: cover;
+            border: 2px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .status-dot {
+            width: 12px; height: 12px; background: #34C759;
+            border-radius: 50%; border: 2px solid white;
+            position: absolute; bottom: 0; right: 0;
+        }
+
+        /* --- TARJETAS --- */
+        .cards-container { display: flex; flex-direction: column; gap: 20px; }
+
+        .card {
+            height: 180px; border-radius: 20px; overflow: hidden;
+            position: relative; cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transform: translateZ(0);
+        }
+
+        .card-bg {
+            width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            transition: transform 0.6s ease;
+        }
+        .card:hover .card-bg { transform: scale(1.05); }
+
+        .card-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7));
+            padding: 20px; display: flex; flex-direction: column; justify-content: space-between;
+            color: white;
+        }
+
+        .card-top { display: flex; justify-content: space-between; align-items: center; }
+        .badge {
+            background: rgba(255,255,255,0.25); backdrop-filter: blur(5px);
+            padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: bold;
+            text-transform: uppercase; border: 1px solid rgba(255,255,255,0.4);
+        }
+        .card-bottom h3 { font-size: 1.4rem; font-weight: 700; margin-bottom: 5px; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .card-bottom p { font-size: 0.9rem; font-weight: 500; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+
+        /* --- MODAL --- */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+            z-index: 3000; display: flex; align-items: flex-end;
+        }
+        .hidden { display: none !important; }
+
+        .modal-content {
+            background: white; width: 100%; height: 85vh;
+            border-radius: 30px 30px 0 0; position: relative;
+            overflow-y: auto; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .modal-hero { width: 100%; height: 250px; background-size: cover; background-position: center; }
+        
+        .close-modal {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.9); border: none; width: 36px; height: 36px;
+            border-radius: 50%; color: #333; font-size: 1.2rem; cursor: pointer; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .modal-body { padding: 30px; padding-bottom: 80px; }
+        
+        .flight-info {
+            display: flex; justify-content: space-between; margin-bottom: 25px;
+            background: #F2F2F7; padding: 15px; border-radius: 15px;
+        }
+        .label { font-size: 0.7rem; color: #888; font-weight: bold; display: block; margin-bottom: 5px; }
+        h4 { font-size: 1rem; font-weight: 700; }
+
+        #modal-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 10px; color: #111; }
+        #modal-desc { color: #444; line-height: 1.6; margin-bottom: 30px; font-size: 1rem; white-space: pre-line; }
+
+        .confirm-btn {
+            background: var(--dark); color: white; width: 100%; padding: 18px;
+            border: none; border-radius: 15px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; display: flex; justify-content: center; gap: 10px; align-items: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .confirm-btn:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-music" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lo-fi-chill-medium-version-113524.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="lock-screen">
+        <div class="slideshow">
+            <img src="https://i.postimg.cc/QVWvqSxZ/IMG-4308.jpg" class="slide-img">
+            <img src="https://i.postimg.cc/XXytgx7b/IMG-5924.jpg" class="slide-img">
+            <img src="https://i.postimg.cc/23BgxTjg/IMG-6910.jpg" class="slide-img">
+            <img src="https://i.postimg.cc/15fStrSN/IMG-9841.jpg" class="slide-img">
+            <img src="https://i.postimg.cc/qgCWGQMB/IMG-4258.jpg" class="slide-img">
+        </div>
+        
+        <div class="lock-content">
+            <div class="glass-panel">
+                <p class="date">MARTES 06 DE ENERO</p>
+                <h1>Hola, Magda</h1>
+                <p class="subtitle">Tengo una invitación para ti...</p>
+                
+                <button class="unlock-btn" onclick="unlockApp()">
+                    <i class="fas fa-fingerprint"></i> DESBLOQUEAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <main id="app-interface" class="hidden">
+        
+        <header>
+            <div class="header-text">
+                <h2>Mis Viajes</h2>
+                <p>Martes Airlines</p>
+            </div>
+            <div class="avatar-container">
+                <img src="https://i.postimg.cc/HsVmx9mb/IMG_9505.jpg" alt="Perfil">
+                <div class="status-dot"></div>
+            </div>
+        </header>
+
+        <div class="cards-container">
+            
+            <div class="card" onclick="openPlan('boldo')">
+                <div class="card-bg" style="background-image: url('https://i.postimg.cc/Z5p1BfM5/BOLDO.jpg')"></div>
+                <div class="card-overlay">
+                    <div class="card-top">
+                        <span class="badge">PREMIUM</span>
+                        <i class="fas fa-mountain"></i>
+                    </div>
+                    <div class="card-bottom">
+                        <h3>Expedición Zapallar</h3>
+                        <p>Parque El Boldo & Playa</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" onclick="openPlan('quirilluca')">
+                <div class="card-bg" style="background-image: url('https://i.postimg.cc/Nf5tMkt2/quirlluca.png')"></div>
+                <div class="card-overlay">
+                    <div class="card-top">
+                        <span class="badge">AVENTURA</span>
+                        <i class="fas fa-hiking"></i>
+                    </div>
+                    <div class="card-bottom">
+                        <h3>Ruta Salvaje</h3>
+                        <p>Quirilluca & Picnic</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" onclick="openPlan('cochoa')">
+                <div class="card-bg" style="background-image: url('https://i.postimg.cc/vHcyBty1/IMG_7283.jpg')"></div>
+                <div class="card-overlay">
+                    <div class="card-top">
+                        <span class="badge">RELAX</span>
+                        <i class="fas fa-umbrella-beach"></i>
+                    </div>
+                    <div class="card-bottom">
+                        <h3>Cochoa & Relax</h3>
+                        <p>Sol, Playa & Empanadas</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="detail-modal" class="modal hidden">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div id="modal-img" class="modal-hero"></div>
+            
+            <div class="modal-body">
+                <div class="flight-info">
+                    <div>
+                        <span class="label">HORA</span>
+                        <h4 id="modal-time">--:--</h4>
+                    </div>
+                    <div>
+                        <span class="label">VUELO</span>
+                        <h4 id="modal-code">--</h4>
+                    </div>
+                    <div>
+                        <span class="label">CLASE</span>
+                        <h4>Pareja</h4>
+                    </div>
+                </div>
+
+                <h2 id="modal-title">Título</h2>
+                <p id="modal-desc">Descripción...</p>
+
+                <div class="action-area">
+                    <button class="confirm-btn" onclick="sendWhatsApp()">
+                        Confirmar este Vuelo <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- JAVASCRIPT INTEGRADO ---
+        
+        const planes = {
+            boldo: {
+                title: "Expedición Zapallar",
+                time: "10:00 AM",
+                code: "ZAP-01",
+                desc: "Comenzamos con energía haciendo trekking en el Parque El Boldo para ver el mar desde arriba. Luego bajamos a la playa a disfrutar.\n\n🍽️ Almuerzo: ¡Sorpresa! Exploraremos las opciones allá para elegir lo que más se nos antoje en el momento.",
+                img: "https://i.postimg.cc/Z5p1BfM5/BOLDO.jpg"
+            },
+            quirilluca: {
+                title: "Ruta Salvaje",
+                time: "10:30 AM",
+                code: "QRL-02",
+                desc: "Conexión total con la naturaleza. Visitaremos los acantilados de Quirilluca y bajaremos a playas escondidas.\n\n🧺 Incluye: Picnic especial preparado por mí frente al mar.",
+                img: "https://i.postimg.cc/Nf5tMkt2/quirlluca.png"
+            },
+            cochoa: {
+                title: "Cochoa & Relax",
+                time: "11:00 AM",
+                code: "COC-03",
+                desc: "Modo turista en nuestra ciudad. Partimos con un desayuno increíble (Le Mint, Bali Coffee o Bakery Lynch, ¡tú eliges!).\n\n🏖️ Luego: Tarde de sol en Cochoa y cerramos con unas empanaditas clásicas.",
+                img: "https://i.postimg.cc/vHcyBty1/IMG_7283.jpg"
+            }
+        };
+
+        let selectedPlan = "";
+
+        // 1. DESBLOQUEAR APP
+        function unlockApp() {
+            const lockScreen = document.getElementById('lock-screen');
+            const appInterface = document.getElementById('app-interface');
+            const audio = document.getElementById('bg-music');
+
+            lockScreen.style.transform = "translateY(-100%)";
+            lockScreen.style.transition = "transform 0.6s cubic-bezier(0.77, 0, 0.175, 1)";
+
+            setTimeout(() => {
+                appInterface.classList.remove('hidden');
+                appInterface.style.opacity = "1";
+            }, 300);
+
+            // Reproducir audio
+            audio.volume = 0.5;
+            audio.play().catch(error => {
+                console.log("Audio requiere toque previo.");
+            });
+        }
+
+        // 2. ABRIR PLAN
+        function openPlan(planKey) {
+            const data = planes[planKey];
+            selectedPlan = data.title;
+
+            document.getElementById('modal-title').innerText = data.title;
+            document.getElementById('modal-time').innerText = data.time;
+            document.getElementById('modal-code').innerText = data.code;
+            document.getElementById('modal-desc').innerText = data.desc;
+            document.getElementById('modal-img').style.backgroundImage = `url('${data.img}')`;
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        // 3. CERRAR MODAL
+        function closeModal() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        }
+
+        // 4. CONFIRMAR (WHATSAPP)
+        function sendWhatsApp() {
+            const numero = "56933755577"; // Tu número correcto
+            
+            const mensaje = `¡Hola! Me encantó la App. Mi elección de vuelo es: *${selectedPlan}* ✈️❤️. ¡Nos vemos el martes!`;
+            const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+            
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
